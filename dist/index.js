@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 exports.__esModule = true;
-exports.asIntOr = exports.asInt = exports.asArrayOr = exports.asArray = exports.asStringOr = exports.asString = exports.asBoolOr = exports.asBool = exports.ConfigurationError = void 0;
+exports.asEnumOr = exports.asEnum = exports.asIntOr = exports.asInt = exports.asArrayOr = exports.asArray = exports.asStringOr = exports.asString = exports.asBoolOr = exports.asBool = exports.ConfigurationError = void 0;
 var ConfigurationError = /** @class */ (function (_super) {
     __extends(ConfigurationError, _super);
     function ConfigurationError() {
@@ -82,3 +82,35 @@ var asIntOr = function (key, defaultValue) {
     return defaultValue;
 };
 exports.asIntOr = asIntOr;
+var asEnum = function (targetEnum) { return function (key) {
+    var inputValue = process.env[key];
+    if (!inputValue) {
+        throw new ConfigurationError("Missing  key " + key);
+    }
+    var _a = Object.entries(targetEnum).find(function (_a) {
+        var _key = _a[0], value = _a[1];
+        return value === inputValue;
+    }) ||
+        [], _enumKey = _a[0], enumValue = _a[1];
+    if (enumValue !== undefined) {
+        return enumValue;
+    }
+    throw new ConfigurationError("Can not find " + key + " in enum values " + Object.values(targetEnum).join(", "));
+}; };
+exports.asEnum = asEnum;
+var asEnumOr = function (targetEnum) { return function (key, defaultValue) {
+    var inputValue = process.env[key];
+    if (!inputValue) {
+        return defaultValue;
+    }
+    var _a = Object.entries(targetEnum).find(function (_a) {
+        var _key = _a[0], value = _a[1];
+        return value === inputValue;
+    }) ||
+        [], _enumKey = _a[0], enumValue = _a[1];
+    if (enumValue !== undefined) {
+        return enumValue;
+    }
+    return defaultValue;
+}; };
+exports.asEnumOr = asEnumOr;

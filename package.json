@@ -1,7 +1,7 @@
 {
   "name": "@satankebab/env-parsers",
   "private": false,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Typed parsers for process env",
   "main": "dist/index.js",
   "scripts": {

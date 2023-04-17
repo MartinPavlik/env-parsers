@@ -64,3 +64,46 @@ export const asIntOr = (key: string, defaultValue: number): number => {
 
   return defaultValue;
 };
+
+export const asEnum = <T extends string>(targetEnum: {
+  [key: string]: T;
+}) => (key: string): T => {
+  const inputValue = process.env[key];
+
+  if (!inputValue) {
+    throw new ConfigurationError(`Missing  key ${key}`);
+  }
+
+  const [_enumKey, enumValue] =
+    Object.entries(targetEnum).find(([_key, value]) => value === inputValue) ||
+    [];
+
+  if (enumValue !== undefined) {
+    return enumValue;
+  }
+
+  throw new ConfigurationError(
+    `Can not find ${key} in enum values ${Object.values(targetEnum).join(", ")}`
+  );
+};
+
+export const asEnumOr = <T extends string>(targetEnum: {
+  [key: string]: T;
+}) => (key: string, defaultValue: T): T => {
+  const inputValue = process.env[key];
+
+  if (!inputValue) {
+    return defaultValue;
+  }
+
+  const [_enumKey, enumValue] =
+    Object.entries(targetEnum).find(([_key, value]) => value === inputValue) ||
+    [];
+
+  if (enumValue !== undefined) {
+    return enumValue;
+  }
+
+
+  return defaultValue;
+};

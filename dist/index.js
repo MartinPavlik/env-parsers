@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 exports.__esModule = true;
-exports.asEnumOr = exports.asEnum = exports.asIntOr = exports.asInt = exports.asArrayOr = exports.asArray = exports.asStringOr = exports.asString = exports.asBoolOr = exports.asBool = exports.ConfigurationError = void 0;
+exports.asEnumOr = exports.asEnum = exports.asNumberOr = exports.asNumber = exports.asIntOr = exports.asInt = exports.asArrayOr = exports.asArray = exports.asStringOr = exports.asString = exports.asBoolOr = exports.asBool = exports.ConfigurationError = void 0;
 var ConfigurationError = /** @class */ (function (_super) {
     __extends(ConfigurationError, _super);
     function ConfigurationError() {
@@ -22,12 +22,15 @@ var ConfigurationError = /** @class */ (function (_super) {
     return ConfigurationError;
 }(Error));
 exports.ConfigurationError = ConfigurationError;
+var createMissingKeyError = function (key, type) {
+    return new ConfigurationError("Missing key " + key + " on process.env object, expected type is " + type);
+};
 var asBool = function (key) {
     if (process.env[key]) {
         var value = process.env[key];
         return value === '1' || value === 'true';
     }
-    throw new ConfigurationError("Missing config key " + key);
+    throw createMissingKeyError(key, 'boolean');
 };
 exports.asBool = asBool;
 var asBoolOr = function (key, defaultValue) {
@@ -41,7 +44,7 @@ exports.asBoolOr = asBoolOr;
 var asString = function (key) {
     if (process.env[key])
         return String(process.env[key]);
-    throw new ConfigurationError("Missing config key " + key);
+    throw createMissingKeyError(key, 'string');
 };
 exports.asString = asString;
 var asStringOr = function (key, defaultValue) {
@@ -51,6 +54,9 @@ var asStringOr = function (key, defaultValue) {
 };
 exports.asStringOr = asStringOr;
 var asArray = function (key) {
+    if (!process.env[key]) {
+        throw createMissingKeyError(key, 'array (comma separated string, for example: value1,value2,value3)');
+    }
     var input = exports.asString(key);
     return (input ? input.split(',') : []).map(function (x) { return x.trim(); });
 };
@@ -69,7 +75,7 @@ var asInt = function (key) {
             return int;
         throw new ConfigurationError("Invalid configuration of key " + key + ": " + process.env[key]);
     }
-    throw new ConfigurationError("Missing config key " + key);
+    throw createMissingKeyError(key, 'int');
 };
 exports.asInt = asInt;
 var asIntOr = function (key, defaultValue) {
@@ -82,14 +88,39 @@ var asIntOr = function (key, defaultValue) {
     return defaultValue;
 };
 exports.asIntOr = asIntOr;
+var asNumber = function (key) {
+    if (process.env[key]) {
+        var float = Number(process.env[key]);
+        if (!Number.isNaN(float))
+            return float;
+        throw new ConfigurationError("Invalid configuration of key " + key + ": " + process.env[key]);
+    }
+    throw createMissingKeyError(key, 'number');
+};
+exports.asNumber = asNumber;
+var asNumberOr = function (key, defaultValue) {
+    if (process.env[key]) {
+        var float = Number(process.env[key]);
+        if (!Number.isNaN(float))
+            return float;
+        throw new ConfigurationError("Invalid configuration of key " + key + ": " + process.env[key]);
+    }
+    return defaultValue;
+};
+exports.asNumberOr = asNumberOr;
 var asEnum = function (targetEnum) { return function (key) {
     var inputValue = process.env[key];
     if (!inputValue) {
-        throw new ConfigurationError("Missing  key " + key);
+        throw createMissingKeyError(key, "enum with values " + Object.values(targetEnum).join(", "));
     }
     var _a = Object.entries(targetEnum).find(function (_a) {
         var _key = _a[0], value = _a[1];
-        return value === inputValue;
+        // string enums
+        return value === inputValue ||
+            // int enums
+            (Number(value) === Number(inputValue) &&
+                !Number.isNaN(Number(value)) &&
+                !Number.isNaN(Number(inputValue)));
     }) ||
         [], _enumKey = _a[0], enumValue = _a[1];
     if (enumValue !== undefined) {
@@ -105,12 +136,17 @@ var asEnumOr = function (targetEnum) { return function (key, defaultValue) {
     }
     var _a = Object.entries(targetEnum).find(function (_a) {
         var _key = _a[0], value = _a[1];
-        return value === inputValue;
+        // string enums
+        return value === inputValue ||
+            // int enums
+            (Number(value) === Number(inputValue) &&
+                !Number.isNaN(Number(value)) &&
+                !Number.isNaN(Number(inputValue)));
     }) ||
         [], _enumKey = _a[0], enumValue = _a[1];
     if (enumValue !== undefined) {
         return enumValue;
     }
-    return defaultValue;
+    throw new ConfigurationError("Can not find " + key + " in enum values " + Object.values(targetEnum).join(", "));
 }; };
 exports.asEnumOr = asEnumOr;

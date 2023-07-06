@@ -1,4 +1,44 @@
-import { asBool, asBoolOr, asString, asStringOr, asArray, asArrayOr, asInt, asIntOr, asNumber, asNumberOr, asEnum, asEnumOr } from './index'
+import {
+  asBool,
+  asBoolOr,
+  asString,
+  asStringOr,
+  asArray,
+  asArrayOr,
+  asInt,
+  asIntOr,
+  asNumber,
+  asNumberOr,
+  asEnum,
+  asEnumOr,
+  createParser,
+} from './index'
+
+describe('createParser', () => {
+  it('should return a parser with the given source', () => {
+    const testSource = { test: 'test-string', x: 'true', y: '1' };
+    const parser = createParser(testSource);
+
+    expect(parser.asBool('x')).toBe(true);
+    expect(parser.asBoolOr('x', false)).toBe(true);
+    expect(parser.asBool('y')).toBe(true);
+    expect(parser.asBoolOr('y', false)).toBe(true);
+    expect(() => parser.asBool('test')).toThrowError('Value of key \'test\': \'test-string\' can not be parsed as boolean, expected: 1, 0, true or false');
+    expect(() => parser.asBoolOr('test', true)).toThrowError('Value of key \'test\': \'test-string\' can not be parsed as boolean, expected: 1, 0, true or false');
+    expect(parser.asBoolOr('non-existing', true)).toBe(true);
+    expect(parser.asBoolOr('non-existing', false)).toBe(false);
+
+    expect(parser.asString('test')).toBe('test-string');
+    expect(parser.asStringOr('test', 'default')).toBe('test-string');
+    expect(parser.asStringOr('non-existing', 'default')).toBe('default');
+
+    expect(() => parser.asInt('test')).toThrowError('Invalid configuration of key \'test\': \'test-string\', expected type is \'integer\'');
+    expect(parser.asInt('y')).toBe(1);
+    expect(parser.asIntOr('y', 2)).toBe(1);
+    expect(parser.asIntOr('non-existing', 2)).toBe(2);
+  });
+});
+
 
 describe('asBool', () => {
   afterEach(() => {
@@ -25,7 +65,7 @@ describe('asBool', () => {
   });
 
   it('should throw if env var is not set', () => {
-    expect(() => asBool('TEST')).toThrowError('Missing key TEST on process.env object, expected type is boolean');
+    expect(() => asBool('TEST')).toThrowError('Missing key \'TEST\' on configuration object, expected type is \'boolean\'');
   });
 });
 
@@ -71,7 +111,7 @@ describe('asString', () => {
   });
 
   it('should throw if env var is not set', () => {
-    expect(() => asString('TEST')).toThrowError('Missing key TEST on process.env object, expected type is string');
+    expect(() => asString('TEST')).toThrowError('Missing key \'TEST\' on configuration object, expected type is \'string\'');
   });
 });
 
@@ -103,7 +143,7 @@ describe('asArray', () => {
   });
 
   it('should throw an error if the process.env property is not set', () => {
-      expect(() => asBool('TEST')).toThrowError('Missing key TEST on process.env object, expected type is boolean');
+      expect(() => asBool('TEST')).toThrowError('Missing key \'TEST\' on configuration object, expected type is \'boolean\'');
   });
 });
 
@@ -140,12 +180,12 @@ describe('asInt', () => {
 
   it('should throw an error if the value can not be parsed', () => {
     process.env.TEST = 'xxx';
-    expect(() => asInt('TEST')).toThrowError('Invalid configuration of key TEST: xxx');
+    expect(() => asInt('TEST')).toThrowError('Invalid configuration of key \'TEST\': \'xxx\', expected type is \'integer\'');
   })
 
 
   it('should throw an error if the process.env property is not set', () => {
-      expect(() => asInt('TEST')).toThrowError('Missing key TEST on process.env object, expected type is int');
+      expect(() => asInt('TEST')).toThrowError('Missing key \'TEST\' on configuration object, expected type is \'integer\'');
   });
 });
 
@@ -162,7 +202,7 @@ describe('asIntOr', () => {
 
   it('should throw an error if the value can not be parsed', () => {
     process.env.TEST = 'xxx';
-    expect(() => asIntOr('TEST', 55)).toThrowError('Invalid configuration of key TEST: xxx');
+    expect(() => asIntOr('TEST', 55)).toThrowError('Invalid configuration of key \'TEST\': \'xxx\', expected type is \'integer\'');
   })
 
   it('should return default value if process.env is not set', () => {
@@ -183,11 +223,11 @@ describe('asNumber', () => {
 
   it('should throw an error if the value can not be parsed', () => {
     process.env.TEST = '55.5.5';
-    expect(() => asNumber('TEST')).toThrowError('Invalid configuration of key TEST: 55.5.5');
+    expect(() => asNumber('TEST')).toThrowError("Invalid configuration of key 'TEST': '55.5.5', expected type is 'number'");
   })
 
   it('should throw an error if the process.env property is not set', () => {
-      expect(() => asNumber('TEST')).toThrowError('Missing key TEST on process.env object, expected type is number');
+      expect(() => asNumber('TEST')).toThrowError('Missing key \'TEST\' on configuration object, expected type is \'number\'');
   });
 })
 
@@ -204,7 +244,7 @@ describe('asNumberOr', () => {
 
   it('should throw an error if the value can not be parsed', () => {
     process.env.TEST = '55.5.5';
-    expect(() => asNumberOr('TEST', 55.5)).toThrowError('Invalid configuration of key TEST: 55.5.5');
+    expect(() => asNumberOr('TEST', 55.5)).toThrowError("Invalid configuration of key 'TEST': '55.5.5', expected type is 'number'");
   })
 
   it('should return default value if process.env is not set', () => {
@@ -244,7 +284,7 @@ describe('asEnum', () => {
       ONE,
       TWO,
     }
-    expect(() => asEnum(TestEnum)('TEST')).toThrowError('Can not find TEST in enum values ONE, TWO, 0, 1');
+    expect(() => asEnum(TestEnum)('TEST')).toThrowError("Can not parse value of key 'TEST': 'THREE' as enum, expected values are: ONE, TWO, 0, 1");
   })
 
   it('should throw an error if the process.env property is not set', () => {
@@ -252,7 +292,7 @@ describe('asEnum', () => {
         ONE,
         TWO,
       }
-      expect(() => asEnum(TestEnum)('TEST')).toThrowError('Missing key TEST on process.env object, expected type is enum with values ONE, TWO, 0, 1');
+      expect(() => asEnum(TestEnum)('TEST')).toThrowError('Missing key \'TEST\' on configuration object, expected type is \'enum with values ONE, TWO, 0, 1\'');
   });
 });
 
@@ -297,6 +337,6 @@ describe('asEnumOr', () => {
       ONE,
       TWO,
     }
-    expect(() => asEnumOr(TestEnum)('TEST', TestEnum.TWO)).toThrowError('Can not find TEST in enum values ONE, TWO, 0, 1');
+    expect(() => asEnumOr(TestEnum)('TEST', TestEnum.TWO)).toThrowError("Can not parse value of key 'TEST': 'THREE' as enum, expected values are: ONE, TWO, 0, 1");
   })
 });

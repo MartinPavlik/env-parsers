@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 exports.__esModule = true;
-exports.asEnumOr = exports.asEnum = exports.asNumberOr = exports.asNumber = exports.asIntOr = exports.asInt = exports.asArrayOr = exports.asArray = exports.asStringOr = exports.asString = exports.asBoolOr = exports.asBool = exports.ConfigurationError = void 0;
+exports.createParser = exports.asEnumOr = exports.asEnum = exports.asNumberOr = exports.asNumber = exports.asIntOr = exports.asInt = exports.asArrayOr = exports.asArray = exports.asStringOr = exports.asString = exports.asBoolOr = exports.asBool = exports.ConfigurationError = void 0;
 var ConfigurationError = /** @class */ (function (_super) {
     __extends(ConfigurationError, _super);
     function ConfigurationError() {
@@ -22,131 +22,32 @@ var ConfigurationError = /** @class */ (function (_super) {
     return ConfigurationError;
 }(Error));
 exports.ConfigurationError = ConfigurationError;
-var createMissingKeyError = function (key, type) {
-    return new ConfigurationError("Missing key " + key + " on process.env object, expected type is " + type);
-};
-var asBool = function (key) {
-    if (process.env[key]) {
-        var value = process.env[key];
-        return value === '1' || value === 'true';
-    }
-    throw createMissingKeyError(key, 'boolean');
-};
-exports.asBool = asBool;
-var asBoolOr = function (key, defaultValue) {
-    if (process.env[key]) {
-        var value = process.env[key];
-        return value === '1' || value === 'true';
-    }
-    return defaultValue;
-};
-exports.asBoolOr = asBoolOr;
-var asString = function (key) {
-    if (process.env[key])
-        return String(process.env[key]);
-    throw createMissingKeyError(key, 'string');
-};
-exports.asString = asString;
-var asStringOr = function (key, defaultValue) {
-    if (process.env[key])
-        return String(process.env[key]);
-    return defaultValue;
-};
-exports.asStringOr = asStringOr;
-var asArray = function (key) {
-    if (!process.env[key]) {
-        throw createMissingKeyError(key, 'array (comma separated string, for example: value1,value2,value3)');
-    }
-    var input = exports.asString(key);
-    return (input ? input.split(',') : []).map(function (x) { return x.trim(); });
-};
-exports.asArray = asArray;
-var asArrayOr = function (key, defaultValue) {
-    var input = process.env[key];
-    if (!input)
-        return defaultValue;
-    return input.split(',');
-};
-exports.asArrayOr = asArrayOr;
-var asInt = function (key) {
-    if (process.env[key]) {
-        var int = parseInt(process.env[key], 10);
-        if (Number.isInteger(int) && !Number.isNaN(int))
-            return int;
-        throw new ConfigurationError("Invalid configuration of key " + key + ": " + process.env[key]);
-    }
-    throw createMissingKeyError(key, 'int');
-};
-exports.asInt = asInt;
-var asIntOr = function (key, defaultValue) {
-    if (process.env[key]) {
-        var int = parseInt(process.env[key], 10);
-        if (Number.isInteger(int) && !Number.isNaN(int))
-            return int;
-        throw new ConfigurationError("Invalid configuration of key " + key + ": " + process.env[key]);
-    }
-    return defaultValue;
-};
-exports.asIntOr = asIntOr;
-var asNumber = function (key) {
-    if (process.env[key]) {
-        var float = Number(process.env[key]);
-        if (!Number.isNaN(float))
-            return float;
-        throw new ConfigurationError("Invalid configuration of key " + key + ": " + process.env[key]);
-    }
-    throw createMissingKeyError(key, 'number');
-};
-exports.asNumber = asNumber;
-var asNumberOr = function (key, defaultValue) {
-    if (process.env[key]) {
-        var float = Number(process.env[key]);
-        if (!Number.isNaN(float))
-            return float;
-        throw new ConfigurationError("Invalid configuration of key " + key + ": " + process.env[key]);
-    }
-    return defaultValue;
-};
-exports.asNumberOr = asNumberOr;
-var asEnum = function (targetEnum) { return function (key) {
-    var inputValue = process.env[key];
-    if (!inputValue) {
-        throw createMissingKeyError(key, "enum with values " + Object.values(targetEnum).join(", "));
-    }
-    var _a = Object.entries(targetEnum).find(function (_a) {
-        var _key = _a[0], value = _a[1];
-        // string enums
-        return value === inputValue ||
-            // int enums
-            (Number(value) === Number(inputValue) &&
-                !Number.isNaN(Number(value)) &&
-                !Number.isNaN(Number(inputValue)));
-    }) ||
-        [], _enumKey = _a[0], enumValue = _a[1];
-    if (enumValue !== undefined) {
-        return enumValue;
-    }
-    throw new ConfigurationError("Can not find " + key + " in enum values " + Object.values(targetEnum).join(", "));
-}; };
-exports.asEnum = asEnum;
-var asEnumOr = function (targetEnum) { return function (key, defaultValue) {
-    var inputValue = process.env[key];
-    if (!inputValue) {
-        return defaultValue;
-    }
-    var _a = Object.entries(targetEnum).find(function (_a) {
-        var _key = _a[0], value = _a[1];
-        // string enums
-        return value === inputValue ||
-            // int enums
-            (Number(value) === Number(inputValue) &&
-                !Number.isNaN(Number(value)) &&
-                !Number.isNaN(Number(inputValue)));
-    }) ||
-        [], _enumKey = _a[0], enumValue = _a[1];
-    if (enumValue !== undefined) {
-        return enumValue;
-    }
-    throw new ConfigurationError("Can not find " + key + " in enum values " + Object.values(targetEnum).join(", "));
-}; };
-exports.asEnumOr = asEnumOr;
+// import all raw parsers
+var raw_parsers_1 = require("./raw-parsers");
+exports.asBool = raw_parsers_1.asBoolRaw(process.env);
+exports.asBoolOr = raw_parsers_1.asBoolOrRaw(process.env);
+exports.asString = raw_parsers_1.asStringRaw(process.env);
+exports.asStringOr = raw_parsers_1.asStringOrRaw(process.env);
+exports.asArray = raw_parsers_1.asArrayRaw(process.env);
+exports.asArrayOr = raw_parsers_1.asArrayOrRaw(process.env);
+exports.asInt = raw_parsers_1.asIntRaw(process.env);
+exports.asIntOr = raw_parsers_1.asIntOrRaw(process.env);
+exports.asNumber = raw_parsers_1.asNumberRaw(process.env);
+exports.asNumberOr = raw_parsers_1.asNumberOrRaw(process.env);
+exports.asEnum = raw_parsers_1.asEnumRaw(process.env);
+exports.asEnumOr = raw_parsers_1.asEnumOrRaw(process.env);
+var createParser = function (source) { return ({
+    asBool: raw_parsers_1.asBoolRaw(source),
+    asBoolOr: raw_parsers_1.asBoolOrRaw(source),
+    asString: raw_parsers_1.asStringRaw(source),
+    asStringOr: raw_parsers_1.asStringOrRaw(source),
+    asArray: raw_parsers_1.asArrayRaw(source),
+    asArrayOr: raw_parsers_1.asArrayOrRaw(source),
+    asInt: raw_parsers_1.asIntRaw(source),
+    asIntOr: raw_parsers_1.asIntOrRaw(source),
+    asNumber: raw_parsers_1.asNumberRaw(source),
+    asNumberOr: raw_parsers_1.asNumberOrRaw(source),
+    asEnum: raw_parsers_1.asEnumRaw(source),
+    asEnumOr: raw_parsers_1.asEnumOrRaw(source)
+}); };
+exports.createParser = createParser;
